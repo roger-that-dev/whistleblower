@@ -1,4 +1,4 @@
-package com.template
+package com.whistleblower
 
 import org.junit.Test
 

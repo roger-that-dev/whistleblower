@@ -1,4 +1,4 @@
-package com.template
+package com.whistleblower
 
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.transactions.SimpleNotaryService
