@@ -1,7 +1,6 @@
 package com.whistleblower.contract
 
 import com.whistleblower.BLOW_WHISTLE_CONTRACT_ID
-import com.whistleblower.BlowWhistleContract
 import com.whistleblower.BlowWhistleContract.Commands.HandOverInvestigationCmd
 import com.whistleblower.BlowWhistleState
 import net.corda.testing.*
