@@ -13,6 +13,14 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.ProgressTracker.Step
 
+/**
+ * Blows the whistle on a company.
+ *
+ * Confidential identities are used to preserve the identity of the whistle-blower and the investigator.
+ *
+ * @param badCompany the company the whistle is being blown on.
+ * @param investigator the party handling the investigation.
+ */
 @InitiatingFlow
 @StartableByRPC
 class BlowWhistleFlow(private val badCompany: String, private val investigator: Party) : FlowLogic<SignedTransaction>() {
@@ -75,6 +83,7 @@ class BlowWhistleFlow(private val badCompany: String, private val investigator: 
         return subFlow(FinalityFlow(ftx, FINALISE_TRANSACTION.childProgressTracker()))
     }
 
+    /** Generates confidential identities for the whistle-blower and the investigator. */
     @Suspendable
     private fun generateConfidentialIdentities(): Pair<AnonymousParty, AnonymousParty> {
         val confidentialIdentities = subFlow(SwapIdentitiesFlow(

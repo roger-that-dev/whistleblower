@@ -18,6 +18,14 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.ProgressTracker.Step
 
+/**
+ * Hands over a whistle-blowing investigation to a new investigator.
+ *
+ * As with the initial whistle-blowing, the new investigator is given a confidential identity.
+ *
+ * @param caseID the case being transferred.
+ * @param newInvestigator the party taking over the investigation.
+ */
 @InitiatingFlow
 @StartableByRPC
 class HandOverInvestigationFlow(private val caseID: UniqueIdentifier, private val newInvestigator: Party) : FlowLogic<SignedTransaction>() {
@@ -62,13 +70,20 @@ class HandOverInvestigationFlow(private val caseID: UniqueIdentifier, private va
         progressTracker.currentStep = RETRIEVE_STATE
         val (oldBlowWhistleStateAndRef, oldBlowWhistleState) = retrieveBlowWhistleStateByID()
 
+        // We have to check that the confidential identity for the investigator in the
+        // BlowWhistleState corresponds to our identity.
+        val oldInvestigatorIdentity = serviceHub.identityService.requireWellKnownPartyFromAnonymous(oldBlowWhistleState.investigator)
+        if (oldInvestigatorIdentity != ourIdentity) {
+            throw FlowException("Only the current investigator can hand over the investigation.")
+        }
+
         progressTracker.currentStep = GENERATE_CONFIDENTIAL_IDS
         val (anonymousMe, anonymousNewInvestigator) = generateConfidentialIdentities(oldBlowWhistleState)
 
         progressTracker.currentStep = BUILD_TRANSACTION
         val newBlowWhistleState = oldBlowWhistleState.copy(investigator = anonymousNewInvestigator)
         val command = Command(HandOverInvestigationCmd(), listOf(anonymousMe.owningKey, anonymousNewInvestigator.owningKey))
-        val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
+        val txBuilder = TransactionBuilder(oldBlowWhistleStateAndRef.state.notary)
                 .addInputState(oldBlowWhistleStateAndRef)
                 .addOutputState(newBlowWhistleState, BLOW_WHISTLE_CONTRACT_ID)
                 .addCommand(command)
@@ -81,6 +96,7 @@ class HandOverInvestigationFlow(private val caseID: UniqueIdentifier, private va
 
         progressTracker.currentStep = SYNC_CONFIDENTIAL_IDS
         val newInvestigatorSession = initiateFlow(newInvestigator)
+        // This informs the new investigator know the identity of the whistle-blower.
         subFlow(IdentitySyncFlow.Send(
                 setOf(newInvestigatorSession),
                 stx.tx,
@@ -97,6 +113,7 @@ class HandOverInvestigationFlow(private val caseID: UniqueIdentifier, private va
         return subFlow(FinalityFlow(ftx, FINALISE_TRANSACTION.childProgressTracker()))
     }
 
+    /** Extracts the [BlowWhistleState] from the vault using its linear ID. */
     @Suspendable
     private fun retrieveBlowWhistleStateByID(): Pair<StateAndRef<BlowWhistleState>, BlowWhistleState> {
         val criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(caseID))
@@ -106,6 +123,10 @@ class HandOverInvestigationFlow(private val caseID: UniqueIdentifier, private va
         return oldBlowWhistleStateAndRef to oldBlowWhistleState
     }
 
+    /**
+     * Generates a confidential identity for the new investigator. The old investigator reuses
+     * their existing confidential identity.
+     */
     @Suspendable
     private fun generateConfidentialIdentities(oldBlowWhistleState: BlowWhistleState): Pair<AnonymousParty, AnonymousParty> {
         val confidentialIdentities = subFlow(SwapIdentitiesFlow(
@@ -123,6 +144,8 @@ class HandOverInvestigationFlow(private val caseID: UniqueIdentifier, private va
 class HandOverInvestigationFlowResponder(val counterpartySession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
+        // The new investigator must call this in response to IdentitySyncFlow.Send to discover
+        // the whistle-blower's identity.
         subFlow(IdentitySyncFlow.Receive(counterpartySession))
 
         val signTransactionFlow = object : SignTransactionFlow(counterpartySession) {

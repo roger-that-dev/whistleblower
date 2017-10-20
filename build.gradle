@@ -59,11 +59,6 @@ dependencies {
     cordaRuntime "net.corda:corda-webserver:$corda_release_version"
 
     testCompile "net.corda:corda-node-driver:$corda_release_version"
-
-    // CorDapp dependencies
-    // Specify your CorDapp's dependencies below, including dependent CorDapps.
-    // We've defined Cash as a dependent CorDapp as an example.
-    cordapp "net.corda:corda-finance:$corda_release_version"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
@@ -79,34 +74,37 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     directory "./build/nodes"
     networkMap "O=Controller,L=London,C=GB"
     node {
-        name "O=Controller,L=London,C=GB"
+        name "O=Controller,L=Nakuru,C=KE"
         advertisedServices = ["corda.notary.validating"]
-        p2pPort 10002
-        rpcPort 10003
-        cordapps = ["net.corda:corda-finance:$corda_release_version"]
+        p2pPort 10001
+        rpcPort 10002
+        cordapps = []
     }
     node {
-        name "O=PartyA,L=London,C=GB"
+        name "O=BraveEmployee,L=Nairobi,C=KE"
         advertisedServices = []
-        p2pPort 10005
-        rpcPort 10006
-        webPort 10007
-        cordapps = ["net.corda:corda-finance:$corda_release_version"]
+        p2pPort 10003
+        rpcPort 10004
+        webPort 10005
+        cordapps = []
         rpcUsers = [[ user: "user1", "password": "test", "permissions": []]]
     }
     node {
-        name "O=PartyB,L=New York,C=US"
+        name "O=TradeBody,L=Kisumu,C=KE"
         advertisedServices = []
-        p2pPort 10008
-        rpcPort 10009
-        webPort 10010
-        cordapps = ["net.corda:corda-finance:$corda_release_version"]
+        p2pPort 10006
+        rpcPort 10007
+        webPort 10008
+        cordapps = []
         rpcUsers = [[ user: "user1", "password": "test", "permissions": []]]
     }
-}
-
-task runTemplateClient(type: JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-    main = 'com.whistleblower.ClientKt'
-    args 'localhost:10006'
+    node {
+        name "O=GovAgency,L=Mombasa,C=KE"
+        advertisedServices = []
+        p2pPort 10009
+        rpcPort 10010
+        webPort 10011
+        cordapps =
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": []]]
+    }
 }
