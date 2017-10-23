@@ -15,7 +15,7 @@ import net.corda.core.identity.AnonymousParty
  * @property investigator the [AnonymousParty] handling the investigation.
  */
 data class BlowWhistleState(
-        val badCompany: String,
+        val badCompany: String, // Is this the name of another node on the network?
         val whistleBlower: AnonymousParty,
         val investigator: AnonymousParty,
         override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
