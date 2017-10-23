@@ -73,7 +73,7 @@ class BlowWhistleFlow(private val badCompany: String, private val investigator: 
 
         progressTracker.currentStep = COLLECT_COUNTERPARTY_SIG
         val investigatorSession = initiateFlow(investigator)
-        val ftx = subFlow(CollectSignaturesFlow(
+        val ftx = subFlow(CollectSignaturesFlow(        // Use parameter names here.
                 stx,
                 listOf(investigatorSession),
                 listOf(anonymousMe.owningKey),
@@ -86,7 +86,7 @@ class BlowWhistleFlow(private val badCompany: String, private val investigator: 
     /** Generates confidential identities for the whistle-blower and the investigator. */
     @Suspendable
     private fun generateConfidentialIdentities(): Pair<AnonymousParty, AnonymousParty> {
-        val confidentialIdentities = subFlow(SwapIdentitiesFlow(
+        val confidentialIdentities = subFlow(SwapIdentitiesFlow( // Add parameter names here to make it a bit clearer.
                 investigator,
                 false,
                 GENERATE_CONFIDENTIAL_IDS.childProgressTracker()))
@@ -94,7 +94,7 @@ class BlowWhistleFlow(private val badCompany: String, private val investigator: 
                 ?: throw IllegalArgumentException("Could not anonymise my identity.")
         val anonymousInvestigator = confidentialIdentities[investigator]
                 ?: throw IllegalArgumentException("Could not anonymise investigator's identity.")
-        return anonymousMe to anonymousInvestigator
+        return anonymousMe to anonymousInvestigator // Maybe just use the Pair(a, b) syntax here?
     }
 }
 
